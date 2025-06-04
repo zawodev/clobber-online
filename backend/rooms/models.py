@@ -19,6 +19,8 @@ class Room(models.Model):
         related_name='rooms'
     )
     is_public = models.BooleanField(default=True)
+    width = models.PositiveIntegerField(default=8)
+    height = models.PositiveIntegerField(default=8)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

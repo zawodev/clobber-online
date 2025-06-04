@@ -26,12 +26,19 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '192.168.188.23',
+    '100.124.91.43',
+    'zawodev.ddns.net'
+]
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
     # default django apps
     'django.contrib.admin',
     'django.contrib.auth',
@@ -50,7 +57,24 @@ INSTALLED_APPS = [
     # local apps
     'users',
     'rooms',
+    'game',
+    'chat',
 ]
+
+CHANNEL_LAYERS = {
+
+    #'default': {
+    #    'BACKEND': 'channels_redis.core.RedisChannelLayer',
+    #    'CONFIG': {
+    #        'hosts': [('127.0.0.1', 6379)]
+    #    },
+    #},
+
+
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 SITE_ID = 1
 
@@ -103,6 +127,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
+ASGI_APPLICATION = 'backend.asgi.application'
 
 
 # Database

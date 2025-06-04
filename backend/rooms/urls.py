@@ -1,8 +1,14 @@
 # rooms/urls.py
 from django.urls import path
-from .views import rooms, join_room
+from .views import (
+    CreateRoomView, PublicRoomsList,
+    RoomDetailView, JoinRoomView, LeaveRoomView
+)
 
 urlpatterns = [
-    path('rooms/',      rooms,     name='rooms'),       # GET list, POST create
-    path('rooms/join/', join_room, name='join-room'),   # POST join
+    path('create/', CreateRoomView.as_view()),
+    path('public/', PublicRoomsList.as_view()),
+    path('join/', JoinRoomView.as_view()),
+    path('leave/', LeaveRoomView.as_view()),
+    path('details/<str:code>/', RoomDetailView.as_view()),
 ]

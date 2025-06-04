@@ -19,11 +19,22 @@ from django.urls import path
 from django.urls import include
 
 from django.urls import path, include
+from django.http import JsonResponse
+
+
+def health_check(request):
+    return JsonResponse({"status": "ok"})
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
+    path("health/", health_check, name="health_check"),
+
     path('api/v1/users/', include(('users.urls', 'users'), namespace='v1')),
     path('api/v2/users/', include(('users.urls', 'users'), namespace='v2')),
+
+    path('api/v1/rooms/', include(('rooms.urls', 'rooms'), namespace='v1')),
+    path('api/v2/rooms/', include(('rooms.urls', 'rooms'), namespace='v2')),
 ]
+
