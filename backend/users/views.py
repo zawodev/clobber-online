@@ -1,4 +1,5 @@
 # users/views.py
+from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes, force_str
@@ -7,140 +8,105 @@ from django.urls import reverse
 from django.core.mail import send_mail
 from rest_framework import generics, status, permissions
 from rest_framework.response import Response
+from django.db import IntegrityError
 from rest_framework.views import APIView
 
-from .serializers import RegisterSerializer, UserSerializer, FriendRequestSerializer
-from .models import FriendRequest
+from .models import FriendRequest, User, EmailToken
+from .serializers import FriendSerializer, RegisterSerializer, UserSerializer, FriendRequestSerializer
 
-User = get_user_model()
+# import Token
+from rest_framework.authtoken.models import Token
+
+
 
 class RegisterView(generics.CreateAPIView):
-    """
-    Rejestracja użytkownika. Tworzy nowego użytkownika z is_active=False
-    i wysyła e-mail aktywacyjny.
-    """
     serializer_class = RegisterSerializer
-    permission_classes = [permissions.AllowAny]
 
-    def perform_create(self, serializer):
-        user = serializer.save()
-        # Generujemy token i uid dla linku aktywacyjnego
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
-        activation_link = f"http://localhost:8000/api/activate/{uid}/{token}/"
-        # Wysyłamy e-mail z linkiem (używamy send_mail z Django):contentReference[oaicite:9]{index=9}
-        subject = 'Aktywuj swoje konto'
-        message = f'Kliknij w link, aby aktywować konto: {activation_link}'
-        send_mail(subject, message, 'from@example.com', [user.email], fail_silently=False)
-
-
-class ActivateView(APIView):
-    """
-    Aktywacja konta użytkownika po kliknięciu w link z e-maila.
-    """
-    permission_classes = [permissions.AllowAny]
-
-    def get(self, request, uidb64, token):
+    def create(self, request, *args, **kwargs):
         try:
-            uid = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, User.DoesNotExist):
-            user = None
+            return super().create(request, *args, **kwargs)
+        except IntegrityError:
+            return Response(
+                {"error": "username or email already exists"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        if user is not None and default_token_generator.check_token(user, token):
-            user.is_active = True
-            user.save()
-            return Response({'detail': 'Konto aktywowane.'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'detail': 'Niepoprawny link aktywacyjny.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+
+class ConfirmEmailView(generics.GenericAPIView):
+    def get(self, request, token):
+        try:
+            et = EmailToken.objects.get(token=token)
+            et.user.email_confirmed = True
+            et.user.save()
+            return Response({'status': 'email confirmed'})
+        except EmailToken.DoesNotExist:
+            return Response({'error': 'invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LoginView(generics.GenericAPIView):
+    def post(self, request):
+        u = request.data.get('username')
+        p = request.data.get('password')
+        user = authenticate(username=u, password=p)
+        if user:
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({'token': token.key})
+        return Response({'error': 'bad credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProfileView(generics.RetrieveAPIView):
-    """
-    Wyświetlanie własnego profilu (zalogowany użytkownik).
-    """
-    serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_object(self):
-        return self.request.user
-
-
-class ProfileDetailView(generics.RetrieveAPIView):
-    """
-    Wyświetlanie profilu innego użytkownika (po podaniu username w URL).
-    """
     queryset = User.objects.all()
-    serializer_class = UserSerializer
     lookup_field = 'username'
+    serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
-class FriendRequestListView(generics.ListAPIView):
-    """
-    Lista przychodzących zaproszeń dla zalogowanego użytkownika.
-    """
+class FriendAddView(generics.GenericAPIView):
+    serializer_class = FriendSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        friend_name = request.data.get('friend_username')
+        try:
+            f = User.objects.get(username=friend_name)
+            request.user.friends.add(f)
+            return Response({'status': 'friend added'})
+        except User.DoesNotExist:
+            return Response({'error': 'no such user'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class SendFriendRequestView(generics.CreateAPIView):
     serializer_class = FriendRequestSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        return FriendRequest.objects.filter(to_user=self.request.user)
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx['request'] = self.request
+        return ctx
+
+    def perform_create(self, serializer):
+        to_username = self.request.data.get('to_username')
+        to_user = User.objects.get(username=to_username)
+        serializer.save(from_user=self.request.user, to_user=to_user)
 
 
-class SendFriendRequestView(APIView):
-    """
-    Wysyłanie zaproszenia do znajomych (nadawca = current user).
-    """
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, username):
-        try:
-            to_user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            return Response({'detail': 'Użytkownik nie istnieje.'},
-                            status=status.HTTP_404_NOT_FOUND)
-        if FriendRequest.objects.filter(from_user=request.user, to_user=to_user).exists():
-            return Response({'detail': 'Zaproszenie już wysłane.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        if to_user == request.user:
-            return Response({'detail': 'Nie możesz dodać siebie.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        fr = FriendRequest(from_user=request.user, to_user=to_user)
-        fr.save()
-        return Response({'detail': 'Zaproszenie wysłane.'}, status=status.HTTP_201_CREATED)
-
-
-class FriendRequestAcceptView(APIView):
-    """
-    Akceptowanie zaproszenia do znajomych. Dodaje obu użytkowników do swoich list znajomych.
-    """
+class RespondFriendRequestView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
+        action = request.data.get('action')  # "accept" lub "decline"
         try:
             fr = FriendRequest.objects.get(pk=pk, to_user=request.user)
         except FriendRequest.DoesNotExist:
-            return Response({'detail': 'Zaproszenie nie istnieje.'},
-                            status=status.HTTP_404_NOT_FOUND)
-        # Dodaj obu użytkowników do swoich list znajomych (symetrycznie):contentReference[oaicite:10]{index=10}
-        request.user.friends.add(fr.from_user)
-        fr.from_user.friends.add(request.user)
-        fr.delete()  # usuwamy zaakceptowane zaproszenie
-        return Response({'detail': 'Zaproszenie zaakceptowane.'}, status=status.HTTP_200_OK)
+            return Response({'error': 'no such request'}, status=404)
 
-
-class FriendRequestRejectView(APIView):
-    """
-    Odrzucanie zaproszenia (po prostu usunięcie wpisu).
-    """
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, pk):
-        try:
-            fr = FriendRequest.objects.get(pk=pk, to_user=request.user)
-        except FriendRequest.DoesNotExist:
-            return Response({'detail': 'Zaproszenie nie istnieje.'},
-                            status=status.HTTP_404_NOT_FOUND)
-        fr.delete()
-        return Response({'detail': 'Zaproszenie odrzucone.'}, status=status.HTTP_200_OK)
+        if action == 'accept':
+            request.user.friends.add(fr.from_user)
+            fr.from_user.friends.add(request.user)
+            fr.delete()
+            return Response({'status': 'accepted'})
+        elif action == 'decline':
+            fr.delete()
+            return Response({'status': 'declined'})
+        else:
+            return Response({'error': 'invalid action'}, status=400)

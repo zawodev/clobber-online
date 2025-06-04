@@ -7,3 +7,8 @@ cd clobber_backend
 # 2) run server
 python manage.py migrate
 python manage.py runserver
+
+
+# 3) create app
+python manage.py startapp clobber_app
+
