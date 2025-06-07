@@ -7,12 +7,20 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.urls import reverse
 from django.core.mail import send_mail
 from rest_framework import generics, status, permissions
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from django.db import IntegrityError
 from rest_framework.views import APIView
 
+from rest_framework import serializers, status
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
 from .models import FriendRequest, User, EmailToken
-from .serializers import FriendSerializer, RegisterSerializer, UserSerializer, FriendRequestSerializer
+from .serializers import FriendSerializer, RegisterSerializer, UserSerializer, FriendRequestSerializer, \
+    IncomingFriendRequestSerializer, AvatarUploadSerializer
 
 # import Token
 from rest_framework.authtoken.models import Token
@@ -61,6 +69,18 @@ class ProfileView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
 
+class AvatarUploadView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = AvatarUploadSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class FriendAddView(generics.GenericAPIView):
     serializer_class = FriendSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -88,6 +108,14 @@ class SendFriendRequestView(generics.CreateAPIView):
         to_username = self.request.data.get('to_username')
         to_user = User.objects.get(username=to_username)
         serializer.save(from_user=self.request.user, to_user=to_user)
+
+
+class IncomingFriendRequestsView(generics.ListAPIView):
+    serializer_class = IncomingFriendRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return FriendRequest.objects.filter(to_user=self.request.user)
 
 
 class RespondFriendRequestView(generics.GenericAPIView):

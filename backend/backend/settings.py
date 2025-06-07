@@ -28,9 +28,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'localhost',
+    '0.0.0.0',
     '127.0.0.1',
     '192.168.188.23',
     '100.124.91.43',
+    '84.40.238.203'
     'zawodev.ddns.net'
 ]
 
@@ -50,6 +52,7 @@ INSTALLED_APPS = [
 
     # third-party apps
     'rest_framework',
+    'corsheaders',
     'rest_framework.authtoken',
     'allauth', 'allauth.account', 'allauth.socialaccount', # SSO
     'allauth.socialaccount.providers.google',  # np. Google
@@ -106,8 +109,11 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
+    'corsheaders.middleware.CorsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -176,6 +182,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -190,6 +197,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': None,
 }
 
 MEDIA_URL = '/media/'
