@@ -8,11 +8,17 @@ class User(AbstractUser):
     email_confirmed = models.BooleanField(default=False)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     elo = models.IntegerField(default=1000)
-    friends = models.ManyToManyField('self', blank=True)     # lista znajomych (symetryczna relacja)
-
+    wins = models.PositiveIntegerField(default=0)
+    losses = models.PositiveIntegerField(default=0)
+    friends = models.ManyToManyField('self', blank=True)
 
     USERNAME_FIELD = 'email'   # używamy e-maila do logowania
     REQUIRED_FIELDS = ['username']  # pola wymagane przy tworzeniu użytkownika
+
+    @property
+    def winrate(self):
+        total = self.wins + self.losses
+        return (self.wins / total * 100) if total else 0
 
     def __str__(self):
         return self.username

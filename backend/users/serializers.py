@@ -41,9 +41,22 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('id', 'username', 'email', 'email_confirmed', 'avatar', 'elo', 'friends')
 
 
+class AvatarUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('avatar',)
+
+
 class FriendSerializer(serializers.Serializer):
     friend_username = serializers.CharField()
 
+
+class IncomingFriendRequestSerializer(serializers.ModelSerializer):
+    from_username = serializers.ReadOnlyField(source='from_user.username')
+
+    class Meta:
+        model = FriendRequest
+        fields = ('id', 'from_username', 'created')
 
 class FriendRequestSerializer(serializers.ModelSerializer):
     from_user = serializers.ReadOnlyField(source='from_user.username')

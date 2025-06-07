@@ -15,3 +15,20 @@ class Game(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='waiting')
     winner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     created = models.DateTimeField(auto_now_add=True)
+
+class GameResult(models.Model):
+    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='results')
+    winner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='game_wins'
+    )
+    loser = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='game_losses'
+    )
+    played_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.winner} defeated {self.loser} in room {self.game.room.code}"

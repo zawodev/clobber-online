@@ -18,6 +18,12 @@ class Room(models.Model):
         blank=True,
         related_name='rooms'
     )
+    creator_color = models.CharField(
+        max_length=5,
+        choices=[('black', 'black'), ('white', 'white')],
+        default='black'
+    )
+    vs_ai = models.BooleanField(default=False)
     is_public = models.BooleanField(default=True)
     width = models.PositiveIntegerField(default=8)
     height = models.PositiveIntegerField(default=8)

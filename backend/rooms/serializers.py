@@ -10,12 +10,12 @@ class RoomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Room
-        fields = ('code', 'host', 'players', 'is_public', 'width', 'height', 'created_at')
+        fields = ('code', 'host', 'players', 'is_public', 'width', 'height', 'vs_ai', 'creator_color', 'created_at')
 
 class CreateRoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
-        fields = ('is_public', 'width', 'height')
+        fields = ('is_public', 'width', 'height', 'vs_ai', 'creator_color')
 
     def create(self, validated):
         user = self.context['request'].user
