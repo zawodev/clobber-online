@@ -8,14 +8,16 @@
       <label>Hasło:</label>
       <input v-model="LoginInfo.password" type="password" required />
 
-      <button class type="submit" @click="submitLogin" >Zaloguj</button>
+      <button type="submit" >Zaloguj</button>
     </form>
+    <p>Lub zaloguj sie przez <button img></button></p>
     <p>Nie masz konta? <router-link to="/register">Zarejestruj się</router-link></p>
   </div>
 </template>
 
 <script>
 import api from '@/api'
+import { initSocketAfterLogin } from '@/websocket'
 export default {
   data() {
     return {
@@ -32,6 +34,7 @@ export default {
           const data = response.data;
           localStorage.setItem("token", data.token);
           localStorage.setItem("username", this.LoginInfo.username);
+          initSocketAfterLogin();
           this.$router.push('/home');
         })
         .catch(error => {
@@ -42,7 +45,7 @@ export default {
             } 
           }
         })
-      console.log('Logowanie:', this.login, this.password)
+      console.log('Logowanie:', this.LoginInfo.username, this.LoginInfo.password)
     }
   }
 }
