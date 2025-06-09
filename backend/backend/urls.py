@@ -30,7 +30,6 @@ def health_check(request):
 
 
 urlpatterns = [
-
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
     path('health/', health_check, name="health_check"),
@@ -43,6 +42,5 @@ urlpatterns = [
 
     path('api/v1/game/', include(('game.urls', 'game'), namespace='v1')),
     path('api/v2/game/', include(('game.urls', 'game'), namespace='v2')),
-
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

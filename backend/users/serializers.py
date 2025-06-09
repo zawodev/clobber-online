@@ -35,10 +35,36 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
-class UserSerializer(serializers.ModelSerializer):
+class FriendSerializer(serializers.ModelSerializer):
+    avatar = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'email_confirmed', 'avatar', 'elo', 'friends')
+        fields = ('username', 'avatar')
+
+    def get_avatar(self, obj):
+        request = self.context.get('request')
+        if obj.avatar:
+            return request.build_absolute_uri(obj.avatar.url)
+            # return obj.avatar.url
+        return None
+
+
+class UserSerializer(serializers.ModelSerializer):
+    avatar = serializers.SerializerMethodField()
+    friends = FriendSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'email_confirmed', 'avatar', 'friends', 'elo', 'wins', 'losses', 'winrate')
+        read_only_fields = ('username', 'email', 'avatar', 'friends')
+
+    def get_avatar(self, obj):
+        request = self.context.get('request')
+        if obj.avatar:
+            return request.build_absolute_uri(obj.avatar.url)
+            # return obj.avatar.url
+        return None
 
 
 class AvatarUploadSerializer(serializers.ModelSerializer):
@@ -47,16 +73,13 @@ class AvatarUploadSerializer(serializers.ModelSerializer):
         fields = ('avatar',)
 
 
-class FriendSerializer(serializers.Serializer):
-    friend_username = serializers.CharField()
-
-
 class IncomingFriendRequestSerializer(serializers.ModelSerializer):
     from_username = serializers.ReadOnlyField(source='from_user.username')
 
     class Meta:
         model = FriendRequest
         fields = ('id', 'from_username', 'created')
+
 
 class FriendRequestSerializer(serializers.ModelSerializer):
     from_user = serializers.ReadOnlyField(source='from_user.username')
