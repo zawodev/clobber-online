@@ -4,6 +4,7 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.contrib.auth import get_user_model
 from .models import Game, GameResult
 from rooms.models import Room
+from django.utils import timezone
 
 User = get_user_model()
 

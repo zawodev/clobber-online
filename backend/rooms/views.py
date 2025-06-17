@@ -1,6 +1,8 @@
 # rooms/views.py
 from rest_framework import generics, permissions
 from rest_framework.response import Response
+from django.utils import timezone
+from django.db.models import Count
 
 from .models import Room
 from .serializers import (
@@ -21,7 +23,14 @@ class CreateRoomView(generics.GenericAPIView):
 class PublicRoomsList(generics.ListAPIView):
     serializer_class = RoomSerializer
     permission_classes = [permissions.IsAuthenticated]
-    queryset = Room.objects.filter(is_public=True)
+
+    def get_queryset(self):
+        return Room.objects.annotate(
+            players_count=Count('players')
+        ).filter(
+            is_public=True,
+            players_count__gte=1
+        )
 
 class RoomDetailView(generics.RetrieveAPIView):
     serializer_class = RoomSerializer
