@@ -19,6 +19,9 @@
 
       <!-- RIGHT: friends -->
       <div class="friends">
+        <button v-if="!isOwn" @click="inviteFriend" class="invite-btn">
+          ➕ Zaproś do znajomych
+        </button>
         <h3>Znajomi</h3>
         <div v-if="!profile.friends.length" class="no-friends">
           brak znajomych, co za przegryw
@@ -42,13 +45,13 @@ import api from '@/api';
 const route = useRoute();
 const router = useRouter();
 
-const token = localStorage.getItem('token');
+const token = sessionStorage.getItem('token');
 if (token) {
   api.defaults.headers.common['Authorization'] = `Token ${token}`;
 }
 
 const usernameParam = route.params.username;
-const myUsername = localStorage.getItem('username');
+const myUsername = sessionStorage.getItem('username');
 
 const isOwn = usernameParam === myUsername;
 
@@ -81,7 +84,21 @@ async function fetchProfile() {
     }
   }
 }
-
+async function inviteFriend() {
+  try {
+    await api.post('/users/friend-request/send/', {
+      to_username: usernameParam
+    });
+    alert(`Wysłano zaproszenie do ${usernameParam}!`);
+  } catch (err) {
+    console.error('Błąd podczas wysyłania zaproszenia', err);
+    if (err.response?.status === 400) {
+      alert('Zaproszenie już zostało wysłane lub użytkownik jest już znajomym.');
+    } else {
+      alert('Nie udało się wysłać zaproszenia.');
+    }
+  }
+}
 function onAvatarClick() {
   if (isOwn && fileInput.value) {
     fileInput.value.click();
@@ -129,9 +146,11 @@ onMounted(fetchProfile);
 .avatar-wrapper {
   position: relative;
 }
+
 .avatar-wrapper.clickable {
   cursor: pointer;
 }
+
 .avatar {
   width: 100px;
   height: 100px;
@@ -139,6 +158,7 @@ onMounted(fetchProfile);
   object-fit: cover;
   border: 2px solid #2e7d32;
 }
+
 .avatar-input {
   display: none;
 }
@@ -158,6 +178,7 @@ onMounted(fetchProfile);
   flex: 1;
   font-size: 1rem;
 }
+
 .stats p {
   margin: 8px 0;
 }
@@ -166,19 +187,23 @@ onMounted(fetchProfile);
 .friends {
   flex: 1;
 }
+
 .friends h3 {
   margin-bottom: 8px;
 }
+
 .no-friends {
   color: #999;
   font-style: italic;
 }
+
 .friend {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
 }
+
 .friend-avatar {
   width: 40px;
   height: 40px;
@@ -186,8 +211,23 @@ onMounted(fetchProfile);
   object-fit: cover;
   border: 1px solid #ccc;
 }
+
 .friend-name {
   font-size: 1rem;
   color: #333;
+}
+
+.invite-btn {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  margin-left: auto;
+}
+.invite-btn:hover {
+  background-color: #388e3c;
 }
 </style>
