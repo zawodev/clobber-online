@@ -28,6 +28,21 @@ class Room(models.Model):
     width = models.PositiveIntegerField(default=8)
     height = models.PositiveIntegerField(default=8)
     created_at = models.DateTimeField(auto_now_add=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def is_empty(self):
+        return self.players.count() == 0
+
+    @property
+    def is_full(self):
+        if self.vs_ai:
+            return self.players.count() >= 1
+        return self.players.count() >= 2
+
+    @property
+    def is_closed(self):
+        return self.closed_at is not None
 
     def __str__(self):
         return f"{self.code} ({'public' if self.is_public else 'private'})"
