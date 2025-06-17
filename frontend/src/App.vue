@@ -1,6 +1,6 @@
 <template>
   <MainLayout :bttns="layoutComponent">
-    <router-view />
+    <router-view :key="$route.fullPath" />
   </MainLayout>
 </template>
 
@@ -32,6 +32,14 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+main, header, nav {
+  margin: 0;
+  padding: 0;
 }
 </style>

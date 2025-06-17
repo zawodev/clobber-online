@@ -18,7 +18,15 @@ services:
     image: redis:7
     ports:
       - "6379:6379"
+  
+  frontend:
+    image: jborsuk/clobberfront:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
 
 volumes:
   media_volume:
   static_volume:
+

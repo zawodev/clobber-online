@@ -17,7 +17,6 @@
 
 <script>
 import api from '@/api'
-import { initSocketAfterLogin } from '@/websocket'
 export default {
   data() {
     return {
@@ -32,9 +31,8 @@ export default {
       api.post("/users/login/",this.LoginInfo)
         .then(response => {
           const data = response.data;
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("username", this.LoginInfo.username);
-          initSocketAfterLogin();
+          sessionStorage.setItem("token", data.token);
+          sessionStorage.setItem("username", this.LoginInfo.username);
           this.$router.push('/home');
         })
         .catch(error => {

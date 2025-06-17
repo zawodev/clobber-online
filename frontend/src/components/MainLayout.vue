@@ -23,24 +23,12 @@
     </div>
 
     <!-- Chat Popup -->
-    <div v-if="chatOpen" class="chat-popup">
-      <div class="chat-header">
-        <h3>Global Chat</h3>
-        <button @click="toggleChat">✖</button>
-      </div>
-      <div class="chat-messages">
-        <div v-for="(msg, index) in messages" :key="index" class="chat-message">
-          <router-link :to="`/profile/${msg.username}`" class="chat-username">
-            {{ msg.username }}
-          </router-link>
-          <p>{{ msg.text }}</p>
-        </div>
-      </div>
-      <div class="chat-input">
-        <input v-model="newMessage" @keyup.enter="sendMessage" placeholder="Type a message..." />
-        <button @click="sendMessage">Send</button>
-      </div>
-    </div>
+    <ChatComponent
+      v-if="bttns"
+      :visible="chatOpen"
+      :roomId="currentRoomId"           
+      @update:visible="chatOpen = $event"
+    />
 
     <footer>
       <p>FututusDevelopment &copy; 2025</p>
@@ -49,49 +37,36 @@
 </template>
 
 <script>
-import { connectToChat, sendMessage, isSocketConnected } from "@/websocket";
+import ChatComponent from "@/components/Chat.vue";
 
 export default {
   name: 'MainLayout',
+  components: { ChatComponent },
   props: {
     bttns: Boolean,
   },
   data() {
     return {
       chatOpen: false,
-      messages: [],
-      newMessage: "",
+      currentRoomId: null,
     };
   },
   computed: {
     username() {
-      return localStorage.getItem("username");
+      return sessionStorage.getItem("username");
     },
     token() {
-      return localStorage.getItem("token");
+      return sessionStorage.getItem("token");
     }
   },
   mounted() {
-    // Only attach listener if connected
-    if (this.token && isSocketConnected()) {
-      connectToChat(this.token, this.onSocketMessage);
-    }
+
   },
   methods: {
     toggleChat() {
+      this.token = sessionStorage.getItem("token");
+      this.username = sessionStorage.getItem("username");
       this.chatOpen = !this.chatOpen;
-    },
-    onSocketMessage(data) {
-      this.messages.push({
-        username: data.username,
-        text: data.message,
-      });
-    },
-    sendMessage() {
-      if (this.newMessage.trim()) {
-        sendMessage({ message: this.newMessage });
-        this.newMessage = "";
-      }
     }
   }
 }
@@ -99,7 +74,7 @@ export default {
 
 <style scoped>
 .layout-wrapper {
-  position: fixed;
+  position: relative;
   top: 0;
   width: 100vw;
   color: #2e7d32;

@@ -35,7 +35,7 @@ export default {
         .then(response => {
           const data = response.data;
 
-          localStorage.setItem("username", data.username);
+          sessionStorage.setItem("username", data.username);
 
           alert("Rejestracja zakończona pomyślnie!");
           this.$router.push("/");
