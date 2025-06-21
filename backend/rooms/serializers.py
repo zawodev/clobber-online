@@ -12,7 +12,7 @@ class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = ('code', 'host', 'players', 'is_public', 'width', 'height', 'vs_ai', 'creator_color', 'created_at',
-                  "closed_at", 'is_closed')
+                  "closed_at", 'is_closed', 'is_full', 'is_empty')
 
 class CreateRoomSerializer(serializers.ModelSerializer):
     class Meta:
@@ -33,8 +33,8 @@ class JoinRoomSerializer(serializers.Serializer):
             room = Room.objects.get(code=value)
         except Room.DoesNotExist:
             raise serializers.ValidationError("invalid room code")
-        if room.is_closed:
-            raise serializers.ValidationError("room is closed")
+        #if room.is_closed:
+        #    raise serializers.ValidationError("room is closed")
         if room.is_full:
             raise serializers.ValidationError("room is full")
         return room
