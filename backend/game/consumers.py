@@ -41,7 +41,7 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             room=room,
             defaults={
                 'board': self._make_initial_board(room),
-                'current': room.host,
+                'current': None,
                 'status': 'waiting'
             }
         )
@@ -49,7 +49,12 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         if game.status != 'playing' and (len(players) == 2 or room.vs_ai):
             game.board = self._make_initial_board(room)
             game.status = 'playing'
-            game.current = room.host
+            # game.current = room.host
+            if room.creator_color == 'black':
+                game.current = room.host
+            else:
+                opponent = next(p for p in players if p != room.host)
+                game.current = opponent
             game.save()
 
     def _make_initial_board(self, room):
@@ -169,8 +174,18 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
             [cell if cell in ('b', 'w') else '_' for cell in row]
             for row in game.board
         ]
+
+        if game.current:
+            if game.current == room.host:
+                current_color = room.creator_color
+            else:
+                current_color = 'white' if room.creator_color == 'black' else 'black'
+        else:
+            current_color = None
+
         return {
-            'current': game.current.username if game.current else None,
+            #'current': game.current.username if game.current else None,
+            'current': current_color,
             'status': game.status,
             'last_move': last_move,
             'winner': game.winner.username if game.winner else None,
