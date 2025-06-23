@@ -80,6 +80,8 @@ CHANNEL_LAYERS = {
     },
 }
 
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
 SITE_ID = 2
 LOGIN_REDIRECT_URL = '/localhost/auth-callback'
 
