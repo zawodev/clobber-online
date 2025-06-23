@@ -1,6 +1,7 @@
 # rooms/serializers.py
 from rest_framework import serializers
 from challenges.models import Challenge
+from challenges.serializers import ChallengeSerializer
 from django.utils import timezone
 from .models import Room
 
@@ -9,11 +10,12 @@ class RoomSerializer(serializers.ModelSerializer):
     players = serializers.SlugRelatedField(
         many=True, read_only=True, slug_field='username'
     )
+    challenge = ChallengeSerializer(read_only=True)
 
     class Meta:
         model = Room
         fields = ('code', 'host', 'players', 'is_public', 'width', 'height', 'vs_ai', 'creator_color', 'created_at',
-                  "closed_at", 'is_closed', 'is_full', 'is_empty')
+                  "closed_at", 'is_closed', 'is_full', 'is_empty', 'challenge')
 
 class CreateRoomSerializer(serializers.ModelSerializer):
 
@@ -26,10 +28,12 @@ class CreateRoomSerializer(serializers.ModelSerializer):
         fields = ('is_public', 'width', 'height', 'vs_ai', 'creator_color', 'challenge_id')
 
     def validate_challenge_id(self, value):
+        if value is None:
+            return None
         try:
             return Challenge.objects.get(pk=value)
         except Challenge.DoesNotExist:
-            raise serializers.ValidationError("invalid challenge id")
+            raise serializers.ValidationError("invalid challenge_id")
 
     def create(self, validated):
         user = self.context['request'].user

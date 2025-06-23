@@ -26,7 +26,7 @@ from django.conf.urls.static import static
 
 
 def health_check(request):
-    return JsonResponse({"status": "ok"})
+    return JsonResponse({"status": "ok1"})
 
 
 urlpatterns = [
