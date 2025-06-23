@@ -47,7 +47,12 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         )
         players = list(room.players.all())
         if game.status != 'playing' and (len(players) == 2 or room.vs_ai):
-            game.board = self._make_initial_board(room)
+
+            if room.challenge:
+                game.board = room.challenge.board
+            else:
+                game.board = self._make_initial_board(room)
+
             game.status = 'playing'
             # game.current = room.host
             if room.creator_color == 'black':

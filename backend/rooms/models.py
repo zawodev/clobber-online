@@ -23,6 +23,11 @@ class Room(models.Model):
         choices=[('black', 'black'), ('white', 'white')],
         default='black'
     )
+    challenge = models.ForeignKey(
+        'challenges.Challenge',
+        null=True, blank=True,
+        on_delete=models.SET_NULL
+    )
     vs_ai = models.BooleanField(default=False)
     is_public = models.BooleanField(default=True)
     width = models.PositiveIntegerField(default=8)
