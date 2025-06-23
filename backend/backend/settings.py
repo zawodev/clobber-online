@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'rooms',
     'game',
     'chat',
+    'challenges',
 ]
 
 CHANNEL_LAYERS = {
@@ -79,7 +80,8 @@ CHANNEL_LAYERS = {
     },
 }
 
-SITE_ID = 1
+SITE_ID = 2
+LOGIN_REDIRECT_URL = '/localhost/auth-callback'
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',

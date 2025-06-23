@@ -42,5 +42,8 @@ urlpatterns = [
 
     path('api/v1/game/', include(('game.urls', 'game'), namespace='v1')),
     path('api/v2/game/', include(('game.urls', 'game'), namespace='v2')),
+
+    path('api/v1/', include(('challenges.urls', 'challenges'), namespace='v1')),
+    path('api/v2/', include(('challenges.urls', 'challenges'), namespace='v2')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
