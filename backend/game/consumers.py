@@ -79,10 +79,16 @@ class GameConsumer(AsyncJsonWebsocketConsumer):
         h, w = room.height, room.width
 
         # sprawdzenie granic i kierunku
-        if not (0 <= frm[0] < h and 0 <= frm[1] < w and
-                0 <= to[0] < h and 0 <= to[1] < w):
+        if not (0 <= frm[0] < h and 0 <= frm[1] < w and 0 <= to[0] < h and 0 <= to[1] < w):
             return False
-        user_color = 'b' if user == room.host else 'w'
+        
+        # user_color = 'b' if user == room.host else 'w'
+        
+        if room.creator_color == 'black':
+            user_color = 'b' if user == room.host else 'w'
+        else:
+            user_color = 'w' if user == room.host else 'b'
+        
         me = board[frm[0]][frm[1]]
         tgt = board[to[0]][to[1]]
         dr, dc = abs(frm[0] - to[0]), abs(frm[1] - to[1])
