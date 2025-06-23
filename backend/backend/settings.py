@@ -83,7 +83,7 @@ CHANNEL_LAYERS = {
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
 SITE_ID = 2
-LOGIN_REDIRECT_URL = '/localhost/auth-callback'
+LOGIN_REDIRECT_URL = 'http://localhost:8080/auth-callback'
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',

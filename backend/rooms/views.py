@@ -1,5 +1,5 @@
 # rooms/views.py
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from django.utils import timezone
 from django.db.models import Count
@@ -18,7 +18,8 @@ class CreateRoomView(generics.GenericAPIView):
         ser = self.get_serializer(data=request.data)
         ser.is_valid(raise_exception=True)
         room = ser.save()
-        return Response(RoomSerializer(room).data)
+        out = RoomSerializer(room, context={'request': request})
+        return Response(out.data, status=status.HTTP_201_CREATED)
 
 class PublicRoomsList(generics.ListAPIView):
     serializer_class = RoomSerializer

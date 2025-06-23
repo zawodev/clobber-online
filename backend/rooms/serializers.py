@@ -19,13 +19,16 @@ class RoomSerializer(serializers.ModelSerializer):
 
 class CreateRoomSerializer(serializers.ModelSerializer):
 
-    challenge_id = serializers.IntegerField(
-        write_only=True, required=False
+    challenge = serializers.PrimaryKeyRelatedField(
+        queryset=Challenge.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True
     )
 
     class Meta:
         model = Room
-        fields = ('is_public', 'width', 'height', 'vs_ai', 'creator_color', 'challenge_id')
+        fields = ('is_public', 'width', 'height', 'vs_ai', 'creator_color', 'challenge')
 
     def validate_challenge_id(self, value):
         if value is None:
@@ -35,16 +38,16 @@ class CreateRoomSerializer(serializers.ModelSerializer):
         except Challenge.DoesNotExist:
             raise serializers.ValidationError("invalid challenge_id")
 
-    def create(self, validated):
+    def create(self, validated_data):
         user = self.context['request'].user
-        challenge = validated.pop('challenge_id', None)
+        challenge = validated_data.pop('challenge', None)
         # jeśli jest challenge, vs_ai=true i nadpisujemy dimensions i color
         if challenge:
-            validated['vs_ai'] = True
-            validated['width'] = challenge.width
-            validated['height'] = challenge.height
-            validated['creator_color'] = challenge.player_color
-        room = Room.objects.create(host=user, **validated)
+            validated_data['vs_ai'] = True
+            validated_data['width'] = challenge.width
+            validated_data['height'] = challenge.height
+            validated_data['creator_color'] = challenge.player_color
+        room = Room.objects.create(host=user, **validated_data)
         room.players.add(user)
         # przypisz challenge
         if challenge:
