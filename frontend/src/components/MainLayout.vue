@@ -1,14 +1,14 @@
 <template>
-  <div class="layout-wrapper">
+  <div class="layout-wrapper" v-auto-animate>
     <header>
       <nav>
-        <img class="logo" src="@/assets/logo.png" />
-        <p v-if="bttns">Zalogowany jako {{ username }}</p>
-        <div class="nav-links" v-if="bttns">
-          <router-link to="/home">Home</router-link>
-          <router-link to="/friends">Friends</router-link>
-          <router-link to="/challenge">Challenges</router-link>
-          <router-link :to="`/profile/${username}`">Profile</router-link>
+        <router-link :to="bttns ? '/home' : '/'"><img class="logo" src="@/assets/logo.png" /></router-link>
+        <p v-if="bttns">Logged in {{ username }}</p>
+        <div class="nav-links" v-if="bttns" v-auto-animate>
+          <router-link to="/home" class="link">Home</router-link>
+          <router-link to="/friends" class="link">Friends</router-link>
+          <router-link to="/challenge" class="link">Challenges</router-link>
+          <router-link :to="`/profile/${username}`" class="link">Profile</router-link>
         </div>
       </nav>
     </header>
@@ -18,18 +18,14 @@
     </main>
 
     <!-- Chat Icon -->
-    <div class="chat-icon" v-if="bttns" @click="toggleChat">
-      💬
+    <div v-auto-animate>
+      <div class="chat-icon" v-if="bttns" @click="toggleChat">
+        💬
+      </div>
+
+      <!-- Chat Popup -->
+      <ChatComponent v-if="bttns" :visible="chatOpen" :roomId="currentRoomId" @update:visible="chatOpen = $event" />
     </div>
-
-    <!-- Chat Popup -->
-    <ChatComponent
-      v-if="bttns"
-      :visible="chatOpen"
-      :roomId="currentRoomId"           
-      @update:visible="chatOpen = $event"
-    />
-
     <footer>
       <p>FututusDevelopment &copy; 2025</p>
     </footer>
@@ -99,7 +95,7 @@ nav {
   gap: 20px;
 }
 
-nav a {
+nav a.link {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -112,7 +108,7 @@ nav a {
   text-align: center;
 }
 
-nav a:hover {
+nav a.link:hover {
   background-color: #45a049;
 }
 

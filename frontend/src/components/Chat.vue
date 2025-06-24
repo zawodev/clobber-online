@@ -4,7 +4,7 @@
             <h3>{{ chatTitle }}</h3>
             <button @click="closeChat">✖</button>
         </div>
-        <div class="chat-messages">
+        <div class="chat-messages" ref="messagesRef">
             <div v-for="(msg, idx) in messages" :key="idx"
                 :class="['chat-message', { 'own': msg.user === myUsername }]">
                 <div class="bubble">
@@ -24,20 +24,10 @@
 
 <script>
 import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue';
-
+import { useAutoAnimate } from '@formkit/auto-animate/vue';
 export default {
     name: 'ChatComponent',
     props: {
-        /**
-         * roomId: when provided, connects to room chat in addition to global
-         */
-        roomId: {
-            type: String,
-            default: null,
-        },
-        /**
-         * visible: controls showing/hiding chat container
-         */
         visible: {
             type: Boolean,
             default: true,
@@ -52,7 +42,8 @@ export default {
         const newMessage = ref('');
         const myUsername = sessionStorage.getItem('username');
         const chatTitle = computed(() => props.roomId ? `Room: ${props.roomId}` : 'Global Chat');
-
+        //auto animate
+        const [messagesRef] = useAutoAnimate()
         function connectGlobal() {
             const url = `ws://localhost:8000/ws/chat/global/?token=${token}`;
             globalSocket.value = new WebSocket(url);
@@ -124,7 +115,8 @@ export default {
             chatTitle,
             closeChat,
             connectGlobal,
-            myUsername
+            myUsername,
+            messagesRef
         };
     }
 };

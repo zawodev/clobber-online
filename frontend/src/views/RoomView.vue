@@ -1,41 +1,60 @@
 <template>
-    <div class="clobber-room">
-        <h2>Pokój: {{ code }}</h2>
-        <div v-if="status === 'waiting'" class="waiting">
-            Oczekiwanie na gracza…
+    <div class="clobber-room-container">
+        <div class="clobber-room">
+            <h2>Room code: {{ code }}</h2>
+            <div v-if="status === 'waiting'" class="waiting">
+                Waiting for second player...
+            </div>
+            <div v-else class="board" :style="{
+                gridTemplateColumns: `repeat(${cols}, ${tileSize}px)`,
+                width: `${cols * tileSize}px`,
+                height: `${rows * tileSize}px`
+            }">
+                <div v-for="(cell, idx) in boardFlat" :key="idx" class="cell" :class="{
+                    'cell--light': isLight(idx),
+                    'cell--dark': !isLight(idx),
+                    'cell--selected': idx === selectedIdx,
+                    'cell--legal': legalMoves.includes(idx)
+                }" @click="onCellClick(idx)">
+                    <transition name="fade">
+                        <div v-if="cell !== '_'" class="piece" :class="cell === 'w' ? 'white' : 'black'"></div>
+                    </transition>
+                </div>
+            </div>
+            <div class="info-bar" v-if="status !== 'waiting'">
+                <span>Current Player:</span>
+                <span class="current-player-circle" :class="current"></span>
+                <span>Your colour:</span>
+                <span class="current-player-circle" :class="myColor"></span>
+                <template v-if="status === 'finished'">
+                    <span class="winner">🎉 {{ winner || 'Clobber-bot' }} won!</span>
+                </template>
+            </div>
+            <button @click="leaveRoom" class="leave-button">Leave room</button>
         </div>
 
-        <div v-else class="board" :style="{
-            gridTemplateColumns: `repeat(${cols}, ${tileSize}px)`,
-            width: `${cols * tileSize}px`,
-            height: `${rows * tileSize}px`
-        }">
-            <div v-for="(cell, idx) in boardFlat" :key="idx" class="cell" :class="{
-                'cell--light': isLight(idx),
-                'cell--dark': !isLight(idx),
-                'cell--selected': idx === selectedIdx,
-                'cell--legal': legalMoves.includes(idx)
-            }" @click="onCellClick(idx)">
-                <transition name="fade">
-                    <div v-if="cell !== '_'" class="piece" :class="cell === 'w' ? 'white' : 'black'"></div>
-                </transition>
+        <!-- CHAT PANE -->
+        <div class="chat-pane">
+            <h3>Send a message to your opponent.</h3>
+            <div class="messages">
+                <div v-for="(msg, i) in chatMessages" :key="i"
+                    :class="['message', msg.user === myUsername ? 'mine' : 'theirs']">
+                    <div class="bubble">
+                        <small class="sender">{{ msg.user }}</small>
+                        <p>{{ msg.message }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input">
+                <input v-model="chatInput" @keyup.enter="sendChat" placeholder="Napisz wiadomość…" />
+                <button @click="sendChat">Wyślij</button>
             </div>
         </div>
-
-        <div class="info-bar" v-if="status !== 'waiting'">
-            <span>Aktualny gracz:</span>
-            <span class="current-player-circle" :class="current === myUsername ? myColor : opponentColor"></span>
-            <template v-if="status === 'finished'">
-                <span class="winner">🎉 {{ winner }} wygrał!</span>
-            </template>
-        </div>
-        <button @click="leaveRoom" class="leave-button">
-            Opuść pokój
-        </button>
     </div>
 </template>
 
 <script>
+import api from '@/api'
 export default {
     name: 'RoomView',
     data() {
@@ -54,7 +73,10 @@ export default {
             tileSize: 60,
             myUsername: sessionStorage.getItem('username'),
             // track which color YOU are:
-            myColor: null,      // "white" or "black"
+            myColor: this.$route.query.color,      // "white" or "black"
+            chatWs: null,
+            chatMessages: [],           // { username, message }
+            chatInput: ''
         };
     },
     computed: {
@@ -67,7 +89,7 @@ export default {
     },
     methods: {
         connect() {
-            const url = `ws://localhost:8000/ws/game/${this.code}/?token=${this.token}`;
+            const url = `${process.env.VUE_APP_WSROOM}/${this.code}/?token=${this.token}`;
             this.ws = new WebSocket(url);
 
             this.ws.onopen = () => {
@@ -75,6 +97,8 @@ export default {
             };
 
             this.ws.onmessage = ({ data }) => {
+                console.log('⟵ WS raw message:', event.data);
+
                 const msg = JSON.parse(data);
                 if (msg.type === 'state') {
                     this.applyState(msg);
@@ -90,13 +114,6 @@ export default {
             this.status = msg.status;
             this.winner = msg.winner;
 
-            // Determine your color once on first state: if you are host (first player) assume black,
-            // else white.  If backend returns creator_color you could use that instead.
-            if (!this.myColor) {
-                // simple heuristic: if current === myUsername and board[0][0] === "_"?
-                // (Better to have backend tell you, but we'll infer)
-                this.myColor = msg.board[0][0] === 'b' ? 'black' : 'white';
-            }
 
             // reset selection and legal moves
             this.selectedIdx = null;
@@ -116,9 +133,7 @@ export default {
             const dirs = [
                 [-1, 0], [1, 0], [0, -1], [0, 1]
             ];
-            const me = this.current === this.myUsername ?
-                (this.myColor === 'white' ? 'w' : 'b') :
-                (this.myColor === 'white' ? 'b' : 'w');
+            const me = this.myColor === 'white' ? 'w' : 'b';
 
             for (const [dr, dc] of dirs) {
                 const nr = r0 + dr, nc = c0 + dc;
@@ -132,24 +147,27 @@ export default {
         },
 
         onCellClick(idx) {
-            // only your turn
-            if (this.status !== 'playing' || this.current !== this.myUsername) return;
+            // tylko jeśli trwa gra i jest tura użytkownika
+            if (this.status !== 'playing' || this.current !== this.myColor) return;
 
+            const mySymbol = this.myColor === 'white' ? 'w' : 'b';
             const val = this.boardFlat[idx];
+            console.log("bruh")
             if (this.selectedIdx === null) {
-                // select your piece
-                const mySym = this.myColor === 'white' ? 'w' : 'b';
-                if (val === mySym) {
+                // Wybór pionka należącego do gracza
+                if (val === mySymbol) {
                     this.selectedIdx = idx;
                     this.legalMoves = this.calcLegalMoves(idx);
                 }
             } else {
-                // attempt move
+                // Próba wykonania ruchu
                 if (this.legalMoves.includes(idx)) {
                     const fromR = Math.floor(this.selectedIdx / this.cols);
                     const fromC = this.selectedIdx % this.cols;
                     const toR = Math.floor(idx / this.cols);
                     const toC = idx % this.cols;
+                    console.log(fromR + ' , ' + fromC + " to " + toR + " , " + toC);
+                    console.log("sending");
                     this.sendMove([fromR, fromC], [toR, toC]);
                 }
                 this.selectedIdx = null;
@@ -164,43 +182,71 @@ export default {
                 from: fromArr,
                 to: toArr
             }));
+            console.log("sent")
+        },
+        connectChat() {
+            const chatUrl =
+                `${process.env.VUE_APP_WSROOMCHAT}/${this.code}/?token=${this.token}`
+            this.chatWs = new WebSocket(chatUrl)
+            this.chatWs.onmessage = ({ data }) => {
+                const { user, message } = JSON.parse(data)
+                this.chatMessages.push({ user, message })
+                this.$nextTick(() => {
+                    const container = this.$el.querySelector('.messages')
+                    container.scrollTop = container.scrollHeight
+                })
+            }
+        },
+        sendChat() {
+            const text = this.chatInput.trim()
+            if (!text || this.chatWs?.readyState !== WebSocket.OPEN) return
+            this.chatWs.send(JSON.stringify({ message: text }))
+            this.chatInput = ''
         },
         async leaveRoom() {
             try {
-                const res = await fetch('http://localhost:8000/rooms/leave/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Token ${this.token}`
-                    },
-                    body: JSON.stringify({ code: this.code })
-                });
-
-                if (!res.ok) {
-                    const error = await res.json();
-                    throw new Error(error.detail || 'Błąd opuszczania pokoju.');
+                const token = sessionStorage.getItem('token');
+                if (token) {
+                    api.defaults.headers.common['Authorization'] = `Token ${token}`;
                 }
 
-                // Clean up WebSocket
+                await api.post('/rooms/leave/', {
+                    code: this.code
+                });
+
+                // Clean up WebSocket connection
                 this.ws?.close();
+                this.chatWs?.close()
+                // Navigate away
                 this.$router.push('/home');
 
             } catch (err) {
-                console.error('Leave room error:', err.message);
-                alert('Nie udało się opuścić pokoju: ' + err.message);
+                console.error('Leave room error:', err.response?.data || err.message);
+                const msg = err.response?.data?.detail || 'Nie udało się opuścić pokoju.';
+                alert(msg);
             }
         }
     },
     mounted() {
         this.connect();
+        this.connectChat()
     },
     beforeUnmount() {
         this.ws?.close();
+        this.chatWs?.close()
     }
 };
 </script>
 
 <style scoped>
+.clobber-room-container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 16px;
+    padding: 20px;
+}
+
 .clobber-room {
     display: flex;
     flex-direction: column;
@@ -299,16 +345,106 @@ export default {
     font-weight: bold;
     color: #4caf50;
 }
+
 .leave-button {
-  margin: 16px 0;
-  padding: 8px 16px;
-  background: #f28482;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+    margin: 16px 0;
+    padding: 8px 16px;
+    background: #f28482;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
 }
+
 .leave-button:hover {
-  background: #e76f6f;
+    background: #e76f6f;
+}
+
+.chat-pane {
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    height: 400px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.chat-pane h3 {
+    margin: 0;
+    padding: 8px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+}
+
+.messages {
+    flex: 1;
+    padding: 3px;
+    overflow-y: auto;
+    background: #fafafa;
+}
+
+.message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 4px;
+}
+
+.message.mine {
+    justify-content: flex-end;
+}
+
+.message.theirs {
+    justify-content: flex-start;
+}
+
+.bubble {
+    width: 55%;
+    max-width: 80%;
+    padding: 3px 3px;
+    border-radius: 12px;
+    background: #e0e0e0;
+    position: relative;
+    display: inline-block;
+    line-height: 1;
+}
+
+.message.mine .bubble {
+    background: #a5d6a7;
+}
+
+.sender {
+    display: block;
+    font-size: 0.7rem;
+    color: #555;
+    margin-bottom: 2px;
+}
+
+.chat-input {
+    display: flex;
+    border-top: 1px solid #ddd;
+}
+
+.chat-input input {
+    flex: 1;
+    border: none;
+    padding: 8px;
+    font-size: 0.9rem;
+}
+
+.chat-input input:focus {
+    outline: none;
+}
+
+.chat-input button {
+    border: none;
+    background: #2e7d32;
+    color: white;
+    padding: 0 16px;
+    cursor: pointer;
+}
+
+.chat-input button:hover {
+    background: #27672a;
 }
 </style>

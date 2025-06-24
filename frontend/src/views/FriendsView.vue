@@ -1,9 +1,9 @@
 <template>
   <div class="friends-view">
-    <h2>Zaproszenia do znajomych</h2>
+    <h2>Your friend requests</h2>
 
     <div v-if="loading" class="loading">
-      Ładowanie…
+      Loading...
     </div>
 
     <div v-else>
@@ -23,7 +23,7 @@
           </div>
           <div class="actions">
             <button @click="respond(req.id, 'accept')">Accept</button>
-            <button @click="respond(req.id, 'deny')">Deny</button>
+            <button @click="respond(req.id, 'decline')">Deny</button>
           </div>
         </div>
       </div>
