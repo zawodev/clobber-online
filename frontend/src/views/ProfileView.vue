@@ -19,17 +19,17 @@
 
       <!-- RIGHT: friends -->
       <div class="friends">
-        <button v-if="!isOwn" @click="inviteFriend" class="invite-btn">
-          ➕ Zaproś do znajomych
+        <button v-if="!isOwn && !isFriend" @click="inviteFriend" class="invite-btn">
+          ➕ Send a friend invite!
         </button>
-        <h3>Znajomi</h3>
+        <h3>Friends</h3>
         <div v-if="!profile.friends.length" class="no-friends">
-          brak znajomych, co za przegryw
+          This user doesn't have any friends yet
         </div>
         <ul v-else>
           <li v-for="friend in profile.friends" :key="friend.username" class="friend">
             <img :src="friend.avatar || require('@/assets/def_profile.png')" class="friend-avatar" />
-            <span class="friend-name">{{ friend.username }}</span>
+            <router-link :to="`/profile/${friend.username}`">{{ friend.username }}</router-link>
           </li>
         </ul>
       </div>
@@ -54,6 +54,7 @@ const usernameParam = route.params.username;
 const myUsername = sessionStorage.getItem('username');
 
 const isOwn = usernameParam === myUsername;
+var isFriend = true;
 
 const profile = ref({
   id: null,
@@ -76,6 +77,7 @@ async function fetchProfile() {
   try {
     const { data } = await api.get(`/users/profile/${usernameParam}/`);
     profile.value = data;
+    isFriend = profile.value.friends.some(friend => friend.username === myUsername);
   } catch (err) {
     console.error('Failed to load profile', err);
     // e.g. redirect if 404

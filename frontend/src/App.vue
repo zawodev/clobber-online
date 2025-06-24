@@ -11,8 +11,8 @@ export default {
   name: 'App',
    computed: {
     layoutComponent() {
-      const path = this.$route.path
-      if (path === '/' || path === '/register') {
+      const p = this.$route.path.replace(/\/$/, '')
+      if (p === '' || p === '/' || p === '/register' || p === '/auth-callback') {
         return false // Brak layoutu
       } else {
         return true // Pokaż layout na innych stronach

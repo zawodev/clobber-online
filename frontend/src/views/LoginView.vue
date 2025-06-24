@@ -8,9 +8,10 @@
       <label>Hasło:</label>
       <input v-model="LoginInfo.password" type="password" required />
 
-      <button type="submit" >Zaloguj</button>
+      <button type="submit">Zaloguj</button>
+      <p>Lub zaloguj sie przez <button class="google-button" @click="redirectToGoogleSSO"><img
+            src="@/assets/goggle.png" /></button></p>
     </form>
-    <p>Lub zaloguj sie przez <button img></button></p>
     <p>Nie masz konta? <router-link to="/register">Zarejestruj się</router-link></p>
   </div>
 </template>
@@ -20,15 +21,15 @@ import api from '@/api'
 export default {
   data() {
     return {
-      LoginInfo:{
-      username: '',
-      password: ''
+      LoginInfo: {
+        username: '',
+        password: ''
       }
     }
   },
   methods: {
     submitLogin() {
-      api.post("/users/login/",this.LoginInfo)
+      api.post("/users/login/", this.LoginInfo)
         .then(response => {
           const data = response.data;
           sessionStorage.setItem("token", data.token);
@@ -38,12 +39,15 @@ export default {
         .catch(error => {
           if (error.response && error.response.status === 400) {
             const data = error.response.data;
-            if (data.error ) {
+            if (data.error) {
               alert(data.error[0]);
-            } 
+            }
           }
         })
       console.log('Logowanie:', this.LoginInfo.username, this.LoginInfo.password)
+    },
+    redirectToGoogleSSO() {
+      window.location.href = process.env.VUE_APP_SSOLINK;
     }
   }
 }
@@ -56,7 +60,7 @@ form {
   margin: 50px auto;
   width: 300px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 h2 {
@@ -108,5 +112,11 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+
+button img {
+  height: 1.2em;
+  width: auto;
+  object-fit: contain;
 }
 </style>

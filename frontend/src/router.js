@@ -8,6 +8,7 @@ import ProfileView from './views/ProfileView.vue'
 import FriendsView from './views/FriendsView.vue'
 import HomeView from './views/HomeView.vue'
 import RoomView from './views/RoomView.vue'
+import AuthCallback from './views/AuthCallback.vue'
 
 const routes = [
   { path: '/', name: 'LoginView', component: LoginView },
@@ -18,6 +19,7 @@ const routes = [
   { path: '/friends', name: 'FriendsView', component: FriendsView },
   { path: '/home', name: 'HomeView', component: HomeView },
   { path: '/room/:code', name: 'RoomView', component: RoomView },
+  { path: '/auth-callback', name: 'AuthCallback', component: AuthCallback },
 ]
 
 const router = createRouter({

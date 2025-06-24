@@ -1,47 +1,62 @@
 <template>
   <div class="challenge-card">
     <div class="card-header">
-      <span class="points">{{ points }} points</span>
       <h3 class="title">{{ title }}</h3>
+      <span class="description">{{ description }}</span>
     </div>
     <ul class="card-details">
-      <li><strong>Difficulty:</strong> {{ difficulty }}</li>
-      <li><strong>Board size:</strong> {{ boardSize }}</li>
-      <li><strong>Time limit:</strong> {{ timeLimit }}</li>
+      <li><strong>Difficulty:</strong> Medium</li>
+      <li><strong>Width:</strong> {{ width }}</li>
+      <li><strong>Height</strong> {{ height }}</li>
     </ul>
     <button class="play-btn" @click="onPlay">Play</button>
   </div>
 </template>
 
 <script>
+import api from '@/api';
+import router from '@/router';
+
 export default {
   name: 'RoomMiniSolo',
   props: {
+    id: {
+      type: Number,
+      required: true
+    },
     title: {
       type: String,
       required: true
     },
-    points: {
+    description: {
+      type: String,
+      required: true
+    },
+    width: {
       type: Number,
       required: true
     },
-    difficulty: {
-      type: String,
-      required: true
-    },
-    boardSize: {
-      type: String,
-      required: true
-    },
-    timeLimit: {
-      type: String,
+    height: {
+      type: Number,
       required: true
     }
   },
   methods: {
-    onPlay() {
-      // Tutaj możesz emitować event wybranego wyzwania, np. do routera lub rodzica:
-      this.$emit('play', { title: this.title, points: this.points });
+    async onPlay() {
+      const { data } = await api.post('rooms/create/', {
+        "is_public": false,
+        "width": this.width,
+        "height": this.height,
+        "creator_color": "black",
+        "challenge": this.id
+      });
+      const existing = JSON.parse(localStorage.getItem('createdRooms') || '[]');
+      existing.push(data.code);
+      localStorage.setItem('createdRooms', JSON.stringify(existing));
+      sessionStorage.setItem('currentRoom', data.code);
+      const code = data.code;
+      const colorr = data.creator_color
+      router.push({ name: 'RoomView', params: { code }, query: { color: colorr } });
     }
   }
 }
@@ -52,13 +67,17 @@ export default {
   background-color: #fff;
   border: 1px solid #ddd;
   border-radius: 6px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   padding: 16px;
   width: 200px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   margin: 8px;
+  transition: transform 0.2s ease;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+
 }
 
 .card-header {
