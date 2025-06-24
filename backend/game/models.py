@@ -21,12 +21,17 @@ class GameResult(models.Model):
     winner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='game_wins'
+        related_name='game_wins',
+        null=True,
+        blank=True
     )
+    # loser może być null, jeśli gra zakończyła się remisem
     loser = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='game_losses'
+        related_name='game_losses',
+        null=True,
+        blank=True
     )
     played_at = models.DateTimeField(auto_now_add=True)
 
