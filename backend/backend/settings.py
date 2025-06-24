@@ -27,7 +27,13 @@ FRONTEND_URL = config('FRONTEND_URL')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+CORS_ALLOWED_ORIGINS = [
+    FRONTEND_URL,
+    'http://localhost',
+]
+
 ALLOWED_HOSTS = [
+    FRONTEND_URL,
     'localhost',
     '0.0.0.0',
     '127.0.0.1',
