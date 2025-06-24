@@ -17,7 +17,13 @@ class Game(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
 class GameResult(models.Model):
-    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='results')
+    game = models.ForeignKey(
+        Game,
+        on_delete=models.SET_NULL,
+        related_name='results',
+        null=True,
+        blank=True
+    )
     winner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
