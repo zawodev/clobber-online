@@ -54,3 +54,4 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 *.env
+terraform/.terraform/providers/registry.terraform.io/hashicorp/aws/5.100.0/windows_amd64/terraform-provider-aws_v5.100.0_x5.exe
