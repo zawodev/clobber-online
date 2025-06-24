@@ -22,6 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
+FRONTEND_URL = config('FRONTEND_URL')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -83,7 +84,7 @@ CHANNEL_LAYERS = {
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
 SITE_ID = 2
-LOGIN_REDIRECT_URL = 'http://localhost:8080/auth-callback'
+LOGIN_REDIRECT_URL = FRONTEND_URL + '/auth-callback/'
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',

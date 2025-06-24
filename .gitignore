@@ -53,3 +53,4 @@ yarn-error.log*
 # System
 .DS_Store
 Thumbs.db
+*.env

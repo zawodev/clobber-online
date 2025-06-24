@@ -27,6 +27,23 @@ from rest_framework.authtoken.models import Token
 
 
 
+class CurrentUserView(generics.RetrieveAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+
+class ObtainTokenFromSessionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # jeśli nie ma tokena, tworzymy
+        token, _ = Token.objects.get_or_create(user=request.user)
+        return Response({'token': token.key})
+
+
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
