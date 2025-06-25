@@ -23,11 +23,11 @@ services:
     build:
       context: ./frontend
       args:
-        VUE_APP_API: http://${PUBLIC_IP}/api/v2
-        VUE_APP_WSGLOBALCHAT: ws://${PUBLIC_IP}/ws/chat/global
-        VUE_APP_WSROOMCHAT: ws://${PUBLIC_IP}/ws/chat/room
-        VUE_APP_WSROOM: ws://${PUBLIC_IP}/ws/game
-        VUE_APP_SSOLINK: http://${PUBLIC_IP}/accounts/google/login
+        VUE_APP_API: http://${PUBLIC_IP}:8000/api/v2
+        VUE_APP_WSGLOBALCHAT: ws://${PUBLIC_IP}:8000/ws/chat/global
+        VUE_APP_WSROOMCHAT: ws://${PUBLIC_IP}:8000/ws/chat/room
+        VUE_APP_WSROOM: ws://${PUBLIC_IP}:8000/ws/game
+        VUE_APP_SSOLINK: http://${PUBLIC_IP}:8000/accounts/google/login
     ports:
       - "80:80"
     depends_on:

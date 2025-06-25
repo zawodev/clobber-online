@@ -37,10 +37,10 @@ export default {
           this.$router.push('/home');
         })
         .catch(error => {
-          if (error.response && error.response.status === 400) {
+          if (error.response) {
             const data = error.response.data;
             if (data.error) {
-              alert(data.error[0]);
+              alert(data.error);
             }
           }
         })
