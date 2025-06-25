@@ -44,5 +44,6 @@ onMounted(async () => {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
+  justify-content: center;
 }
 </style>

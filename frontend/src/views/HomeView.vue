@@ -92,13 +92,12 @@ const form = ref({
   creator_color: 'white'
 });
 
-// Load authentication token
+
 const token = sessionStorage.getItem('token');
 if (token) {
   api.defaults.headers.common['Authorization'] = `Token ${token}`;
 }
 
-// Load existing rooms
 async function loadRooms() {
   loading.value = true;
   try {
@@ -122,15 +121,13 @@ async function joinRoom(code, creator_color) {
     router.push({ name: 'RoomView', params: { code },query: { color: colorr } });
   } catch (err) {
     const resp = err.response?.data;
-    // If already in room, redirect anyway
     if (resp?.code === 'already in room' || resp?.detail === 'already in room') {
       sessionStorage.setItem('currentRoom', code);
-      // we don’t know creator_color here; assume stored previously
-      const storedColor = sessionStorage.getItem('currentRoomColor');
+      const colorr = creator_color == "white" ? "black" : "white";
       router.push({
         name: 'RoomView',
         params: { code },
-        query: { color: storedColor }
+        query: { color: colorr }
       });
       return;
     }
@@ -140,7 +137,6 @@ async function joinRoom(code, creator_color) {
   }
 }
 
-// Create a new room
 async function createRoom() {
   try {
     const payload = { ...form.value };
@@ -183,7 +179,6 @@ function formatDate(iso) {
   });
 }
 
-// Initial load
 onMounted(loadRooms);
 </script>
 
@@ -194,7 +189,6 @@ onMounted(loadRooms);
   padding: 16px;
 }
 
-/* Create Room Panel */
 .create-panel {
   border: 1px solid #4caf50;
   padding: 12px;
