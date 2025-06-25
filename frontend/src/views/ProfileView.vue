@@ -1,23 +1,22 @@
 <template>
   <div class="profile-view">
-    <!-- HEADER: avatar + username -->
     <div class="profile-header">
       <div class="avatar-wrapper" @click="onAvatarClick" :class="{ clickable: isOwn }">
         <img :src="avatarSrc" alt="Avatar" class="avatar" />
         <input type="file" ref="fileInput" class="avatar-input" @change="uploadAvatar" accept="image/*" />
       </div>
       <h2 class="username">{{ profile.username }}</h2>
+      <button v-if="isOwn" @click="logout" class="logout-btn">Logout</button>
     </div>
 
-    <!-- MAIN CONTENT -->
     <div class="profile-content">
-      <!-- LEFT: stats -->
       <div class="stats">
         <p><strong>ELO:</strong> {{ profile.elo }}</p>
-        <p><strong>Email:</strong> {{ profile.email }}</p>
+        <p><strong>Wins:</strong> {{ profile.wins }}</p>
+        <p><strong>Losses:</strong> {{ profile.losses }}</p>
+        <p><strong>Winrate:</strong> {{ profile.winrate }}</p>
       </div>
 
-      <!-- RIGHT: friends -->
       <div class="friends">
         <button v-if="!isOwn && !isFriend" @click="inviteFriend" class="invite-btn">
           ➕ Send a friend invite!
@@ -26,110 +25,166 @@
         <div v-if="!profile.friends.length" class="no-friends">
           This user doesn't have any friends yet
         </div>
-        <ul v-else>
-          <li v-for="friend in profile.friends" :key="friend.username" class="friend">
-            <img :src="friend.avatar || require('@/assets/def_profile.png')" class="friend-avatar" />
-            <router-link :to="`/profile/${friend.username}`">{{ friend.username }}</router-link>
+        <div class="friends-list-wrapper" v-else>
+          <ul>
+            <li v-for="friend in profile.friends" :key="friend.username" class="friend">
+              <img :src="friend.avatar || require('@/assets/def_profile.png')" class="friend-avatar" />
+              <router-link :to="`/profile/${friend.username}`">
+                {{ friend.username }}
+              </router-link>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h3>Game History</h3>
+    <div class="history-container" v-auto-animate>
+      <div class="history-wrapper" v-auto-animate>
+        <ul class="history-list" v-auto-animate>
+          <li v-for="item in history" :key="item.id" class="history-item">
+            <strong>{{ item.played_at.slice(0, 10) }}</strong><br />
+            Winner: {{ item.winner || 'Clobber-bot' }}<br />
+            Loser: {{ item.loser || 'Clobber-bot' }}
           </li>
         </ul>
+        <div v-if="historyLoading" class="loading">Loading…</div>
+      </div>
+
+      <div class="history-controls">
+        <button @click="loadPrevious" :disabled="!prevHistoryUrl || historyLoading">
+          ⬆ Prev
+        </button>
+        <button @click="loadNext" :disabled="!nextHistoryUrl || historyLoading">
+          ⬇ Next
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import api from '@/api';
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import api from '@/api'
 
-const route = useRoute();
-const router = useRouter();
+const route = useRoute()
+const router = useRouter()
+const token = sessionStorage.getItem('token')
+if (token) api.defaults.headers.common['Authorization'] = `Token ${token}`
 
-const token = sessionStorage.getItem('token');
-if (token) {
-  api.defaults.headers.common['Authorization'] = `Token ${token}`;
-}
-
-const usernameParam = route.params.username;
-const myUsername = sessionStorage.getItem('username');
-
-const isOwn = usernameParam === myUsername;
-var isFriend = true;
+const usernameParam = route.params.username
+const myUsername = sessionStorage.getItem('username')
+const isOwn = usernameParam === myUsername
+let isFriend = false
 
 const profile = ref({
-  id: null,
-  username: '',
-  email: '',
-  email_confirmed: false,
-  avatar: null,
-  elo: 0,
+  id: null, username: '',
+  email: '', email_confirmed: false,
+  avatar: null, elo: 0,
+  wins: 0, losses: 0, winrate: 0,
   friends: []
-});
+})
 
-// file input ref
-const fileInput = ref(null);
+const fileInput = ref(null)
+const avatarSrc = computed(() =>
+  profile.value.avatar || require('@/assets/def_profile.png')
+)
 
-const avatarSrc = computed(() => {
-  return profile.value.avatar || require('@/assets/def_profile.png');
-});
+const history = ref([])
+const nextHistoryUrl = ref(null)
+const prevHistoryUrl = ref(null)
+const historyLoading = ref(false)
 
 async function fetchProfile() {
   try {
-    const { data } = await api.get(`/users/profile/${usernameParam}/`);
-    profile.value = data;
-    isFriend = profile.value.friends.some(friend => friend.username === myUsername);
-  } catch (err) {
-    console.error('Failed to load profile', err);
-    // e.g. redirect if 404
-    if (err.response && err.response.status === 404) {
-      router.replace('/');
-    }
+    const { data } = await api.get(`/users/profile/${usernameParam}/`)
+    profile.value = data
+    isFriend = data.friends.some(f => f.username === myUsername)
+    // after profile loads, load first page of history
+    fetchHistoryPage()
+  }
+  catch (err) {
+    if (err.response?.status === 404) router.replace('/')
   }
 }
+
 async function inviteFriend() {
   try {
     await api.post('/users/friend-request/send/', {
       to_username: usernameParam
-    });
-    alert(`Wysłano zaproszenie do ${usernameParam}!`);
-  } catch (err) {
-    console.error('Błąd podczas wysyłania zaproszenia', err);
-    if (err.response?.status === 400) {
-      alert('Zaproszenie już zostało wysłane lub użytkownik jest już znajomym.');
-    } else {
-      alert('Nie udało się wysłać zaproszenia.');
-    }
+    })
+    alert(`Sent invite to ${usernameParam}!`)
+  }
+  catch {
+    alert('Error sending friend invite.')
   }
 }
+
 function onAvatarClick() {
-  if (isOwn && fileInput.value) {
-    fileInput.value.click();
-  }
+  if (isOwn && fileInput.value) fileInput.value.click()
 }
-
-async function uploadAvatar(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const form = new FormData();
-  form.append('avatar', file);
-
+async function uploadAvatar(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  const form = new FormData()
+  form.append('avatar', file)
   try {
     const { data } = await api.post(
       '/users/avatar/upload/',
       form,
       { headers: { 'Content-Type': 'multipart/form-data' } }
-    );
-    // assume response returns new avatar URL
-    profile.value.avatar = data.avatar;
-  } catch (err) {
-    console.error('Avatar upload failed', err);
-    alert('Nie udało się wgrać zdjęcia.');
+    )
+    profile.value.avatar = data.avatar
+    window.location.reload(true)
+  }
+  catch {
+    alert('Nie udało się wgrać zdjęcia.')
   }
 }
 
-onMounted(fetchProfile);
+async function fetchHistoryPage(url = null) {
+  if (historyLoading.value) return
+  historyLoading.value = true
+
+  let res
+  if (url) {
+    // next/previous links already include limit & offset
+    res = await api.get(url, { data: { username: profile.value.username } })
+  }
+  else {
+    res = await api.get('game/history/', {
+      params: { username: profile.value.username, limit: 2, offset: history.value.length },
+    })
+  }
+
+  history.value = res.data.results
+  nextHistoryUrl.value = res.data.next
+  prevHistoryUrl.value = res.data.previous
+  historyLoading.value = false
+}
+
+function loadNext() {
+  if (nextHistoryUrl.value) {
+    fetchHistoryPage(nextHistoryUrl.value, true)
+  }
+}
+function loadPrevious() {
+  if (prevHistoryUrl.value) {
+    fetchHistoryPage(prevHistoryUrl.value, true)
+  }
+}
+function logout() {
+  sessionStorage.clear()
+  router.push('/')
+  .then(() => {
+      window.location.reload();
+    });
+}
+
+onMounted(fetchProfile)
 </script>
+
 
 <style scoped>
 .profile-view {
@@ -175,7 +230,6 @@ onMounted(fetchProfile);
   gap: 32px;
 }
 
-/* LEFT COLUMN: stats */
 .stats {
   flex: 1;
   font-size: 1rem;
@@ -185,7 +239,6 @@ onMounted(fetchProfile);
   margin: 8px 0;
 }
 
-/* RIGHT COLUMN: friends */
 .friends {
   flex: 1;
 }
@@ -197,6 +250,13 @@ onMounted(fetchProfile);
 .no-friends {
   color: #999;
   font-style: italic;
+}
+
+.friends-list-wrapper {
+  flex: 1;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 8px;
 }
 
 .friend {
@@ -229,7 +289,70 @@ onMounted(fetchProfile);
   font-size: 0.95rem;
   margin-left: auto;
 }
+
 .invite-btn:hover {
   background-color: #388e3c;
+}
+
+.logout-btn {
+  background-color: #dd4343;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  margin-left: auto;
+}
+.logout-btn:hover {
+  background-color: #732f26;
+}
+.history-wrapper {
+  height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.history-item {
+  background: #fafafa;
+  margin-bottom: 8px;
+  padding: 12px;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.loading,
+.end {
+  text-align: center;
+  padding: 12px;
+  color: #666;
+}
+.history-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: start;
+}
+
+.history-controls button {
+  padding: 6px 10px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.history-controls button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
 }
 </style>

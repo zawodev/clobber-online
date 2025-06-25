@@ -69,7 +69,7 @@ export default {
   border-radius: 6px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   padding: 16px;
-  width: 200px;
+  width: 400px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
