@@ -1,26 +1,33 @@
-services:
-  backend:
-    #build: ./backend
-    image: zawodev/clobber-online-backend:latest
+services: 
+  backend: 
+    build: ./backend
+    #image: zawodev/clobber-online-backend:latest
     command: daphne -b 0.0.0.0 -p 8000 backend.asgi:application
-    volumes:
+    volumes: 
       - ./backend:/app
       - media_volume:/app/media
       - static_volume:/app/staticfiles
-    ports:
+    ports: 
       - "8000:8000"
-    env_file:
-      - ./backend/.env
-    depends_on:
+    environment: 
+      - FRONTEND_URL=http://${PUBLIC_IP}
+    depends_on: 
       - redis
 
-  redis:
+  redis: 
     image: redis:7
     ports:
       - "6379:6379"
-  
+
   frontend:
-    image: jborsuk/clobberfront:latest
+    build:
+      context: ./frontend
+      args:
+        VUE_APP_API: http://${PUBLIC_IP}:8000/api/v2
+        VUE_APP_WSGLOBALCHAT: ws://${PUBLIC_IP}:8000/ws/chat/global
+        VUE_APP_WSROOMCHAT: ws://${PUBLIC_IP}:8000/ws/chat/room
+        VUE_APP_WSROOM: ws://${PUBLIC_IP}:8000/ws/game
+        VUE_APP_SSOLINK: http://${PUBLIC_IP}:8000/accounts/google/login
     ports:
       - "80:80"
     depends_on:
@@ -29,4 +36,3 @@ services:
 volumes:
   media_volume:
   static_volume:
-

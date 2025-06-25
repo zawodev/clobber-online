@@ -1,30 +1,36 @@
 # Stage 1: Build the app
 FROM node:18-alpine as builder
 
-# Set working directory
 WORKDIR /app
 
-# Install dependencies
 COPY package*.json ./
 RUN npm install
 
-# Copy the source code
-COPY . .
+# Inject build-time environment variables
+ARG VUE_APP_API
+ARG VUE_APP_WSGLOBALCHAT
+ARG VUE_APP_WSROOMCHAT
+ARG VUE_APP_WSROOM
+ARG VUE_APP_SSOLINK
 
-# Build the app for production
+ENV VUE_APP_API=$VUE_APP_API
+ENV VUE_APP_WSGLOBALCHAT=$VUE_APP_WSGLOBALCHAT
+ENV VUE_APP_WSROOMCHAT=$VUE_APP_WSROOMCHAT
+ENV VUE_APP_WSROOM=$VUE_APP_WSROOM
+ENV VUE_APP_SSOLINK=$VUE_APP_SSOLINK
+
+COPY . .
+RUN rm -f .env
 RUN npm run build
 
-# Stage 2: Serve the app using Nginx
+# ────────────────────────────────────────────────
+# Stage 2: Serve with Nginx
 FROM nginx:alpine
 
-# Copy built app from previous stage
+# Copy built Vue app to Nginx's web root
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Replace default nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port 80
+# Expose port 80 and run Nginx in the foreground
 EXPOSE 80
-
-# Start Nginx server
 CMD ["nginx", "-g", "daemon off;"]

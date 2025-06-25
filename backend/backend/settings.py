@@ -34,6 +34,7 @@ CORS_ALLOWED_ORIGINS = [
 
 ALLOWED_HOSTS = [
     FRONTEND_URL,
+    '*',
     'localhost',
     '0.0.0.0',
     '127.0.0.1',
