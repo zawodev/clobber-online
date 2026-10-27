@@ -17,12 +17,26 @@ Aplikacja webowa do gry w Clobber online z personalnym czatem z naszym przeciwni
 - Autentykacja: TBD
 - WebSocket: Socket.io (do czatu i synchronizacji gry)
 
-## Instalacja
+## Uruchomienie lokalne
 
-1. TBD
-2. TBD
-3. TBD
-4. TBD
+Wymagany jest Docker i Docker Compose
+1. Utwórz lokalną konfigurację:
+	```bash
+	cp .env.example .env
+	```
+
+2. Uruchom backend, Redis i frontend:
+	```bash
+	docker compose up --build
+	```
+
+3. Otwórz aplikację pod adresem:
+   ```
+   http://localhost
+   ```
+
+
+Plik `.env` jest używany automatycznie przez Docker Compose. Dla uruchomienia z innego komputera ustaw w nim `PUBLIC_IP` na adres lub hostname dostępny dla przeglądarki. `SECRET_KEY` z przykładu jest przeznaczony wyłącznie do lokalnego developmentu.
 
 ## Struktura katalogów
 

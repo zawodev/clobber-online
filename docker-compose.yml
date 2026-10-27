@@ -1,16 +1,21 @@
 services: 
   backend: 
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        SECRET_KEY: ${SECRET_KEY}
+        FRONTEND_URL: http://${PUBLIC_IP}
     #image: zawodev/clobber-online-backend:latest
     command: daphne -b 0.0.0.0 -p 8000 backend.asgi:application
     volumes: 
-      - ./backend:/app
+      - ./backend:/app:z
       - media_volume:/app/media
       - static_volume:/app/staticfiles
     ports: 
       - "8000:8000"
     environment: 
       - FRONTEND_URL=http://${PUBLIC_IP}
+      - SECRET_KEY=${SECRET_KEY}
     depends_on: 
       - redis
 

@@ -17,6 +17,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # kopiujemy resztę kodu
 COPY . .
 
+ARG SECRET_KEY
+ENV SECRET_KEY=${SECRET_KEY}
+ARG FRONTEND_URL
+ENV FRONTEND_URL=${FRONTEND_URL}
+
 # zbieranie statycznych plików (CSS, JS, obrazy) - pewnie nie potrzebne ale d=_=b
 RUN python manage.py collectstatic --noinput
 
