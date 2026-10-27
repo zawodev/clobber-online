@@ -11,10 +11,10 @@ Aplikacja webowa do gry w Clobber online z personalnym czatem z naszym przeciwni
 
 ## Technologie
 
-- Frontend: TBD
-- Backend: TBD
-- Baza danych: TBD
-- Autentykacja: TBD
+- Frontend: Vue
+- Backend: Django
+- Baza danych: SQLite
+
 - WebSocket: Socket.io (do czatu i synchronizacji gry)
 
 ## Uruchomienie lokalne
@@ -36,14 +36,5 @@ Wymagany jest Docker i Docker Compose
    ```
 
 
-Plik `.env` jest używany automatycznie przez Docker Compose. Dla uruchomienia z innego komputera ustaw w nim `PUBLIC_IP` na adres lub hostname dostępny dla przeglądarki. `SECRET_KEY` z przykładu jest przeznaczony wyłącznie do lokalnego developmentu.
 
-## Struktura katalogów
 
-clobber-online/
-├── TBD/
-├── TBD/
-├── TBD/
-├── TBD/
-├── TBD/
-└── README.md
